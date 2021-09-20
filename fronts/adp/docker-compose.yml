@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  adp_front:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    container_name: vue-ui
+    volumes:
+      - .:/app/adp_front
+      - /app/adp_front/node_modules

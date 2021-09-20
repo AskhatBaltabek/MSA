@@ -1,0 +1,1 @@
+{{ $template->{'body_'.$location} }}

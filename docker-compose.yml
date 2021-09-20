@@ -1,0 +1,471 @@
+version: '3'
+services:
+
+  webserver:
+    image: nginx:alpine
+    restart: unless-stopped
+    tty: true
+    container_name: docker_server
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+      - "8003:8003"
+      - "8004:8004"
+      - "8006:8006"
+      - "8007:8007"
+      - "8008:8008"
+      - "8009:8009"
+      - "8010:8010"
+      - "8011:8011"
+      - "8012:8012"
+      - "8023:8023"
+    volumes:
+      - ./apps/gateway/:/var/www/gateway
+      - ./apps/auth/:/var/www/auth
+      - ./apps/rest/:/var/www/rest
+      - ./apps/notification/:/var/www/notification
+      - ./apps/dictionary/:/var/www/dictionary
+      - ./apps/ones/:/var/www/ones
+      - ./apps/esbd/:/var/www/esbd
+      - ./apps/kaspi/:/var/www/kaspi
+      - ./apps/kasko/:/var/www/kasko
+      - ./apps/client/:/var/www/client
+      - ./apps/ogpo/:/var/www/ogpo
+      - ./apps/shanyrak/:/var/www/shanyrak
+      - ./apps/mst/:/var/www/mst
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/sites/:/etc/nginx/conf.d/
+      - ./docker/nginx/ssl/:/etc/ssl/
+    networks:
+      - dev.a-i.kz
+
+  gateway:
+    build:
+      context: apps/gateway
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    #tty: true
+    environment:
+      SERVICE_NAME: gateway
+      SERVICE_TAGS: dev
+    working_dir: /var/www/gateway
+    volumes:
+      - ./apps/gateway/:/var/www/gateway
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  auth:
+    build:
+      context: apps/auth
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: auth
+      SERVICE_TAGS: dev
+    working_dir: /var/www/auth
+    volumes:
+      - ./apps/auth/:/var/www/auth
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  auth_db:
+    image: mysql:8.0
+    container_name: auth_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33061:3306"
+    environment:
+      MYSQL_DATABASE: auth
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - ./apps/auth/storage/dbdata:/var/lib/mysql
+      - /home/mysql/mysql-files:/var/lib/mysql-files/
+    networks:
+      - dev.a-i.kz
+
+  rest:
+    build:
+      context: apps/rest
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: rest
+      SERVICE_TAGS: dev
+    working_dir: /var/www/rest
+    volumes:
+      - ./apps/rest/:/var/www/rest
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  rest_db:
+    image: mysql:8.0
+    container_name: rest_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33062:3306"
+    environment:
+      MYSQL_DATABASE: rest
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - ./apps/rest/storage/dbdata:/var/lib/mysql
+      - /home/mysql/mysql-files:/var/lib/mysql-files/
+    networks:
+      - dev.a-i.kz
+
+  notification:
+    build:
+      context: apps/notification
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: notification
+      SERVICE_TAGS: dev
+    working_dir: /var/www/notification
+    volumes:
+      - ./apps/notification/:/var/www/notification
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  notification_db:
+    image: mysql:8.0
+    container_name: notification_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33063:3306"
+    environment:
+      MYSQL_DATABASE: notification
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - ./apps/notification/storage/dbdata:/var/lib/mysql
+      - /home/mysql/mysql-files:/var/lib/mysql-files/
+    networks:
+      - dev.a-i.kz
+
+  dictionary:
+    build:
+      context: apps/dictionary
+      dockerfile: Dockerfile
+    image: digitalocean.com/php
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: dictionary
+      SERVICE_TAGS: dev
+    working_dir: /var/www/dictionary
+    volumes:
+      - ./apps/dictionary/:/var/www/dictionary
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  dictionary_db:
+    image: mysql:8.0
+    container_name: dictionary_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33064:3306"
+    environment:
+      MYSQL_DATABASE: dictionary
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - ./apps/dictionary/storage/dbdata:/var/lib/mysql
+      - /home/mysql/mysql-files:/var/lib/mysql-files/
+    networks:
+      - dev.a-i.kz
+
+  msa_admin_ui:
+    container_name: msa_admin_ui
+    build:
+      context: apps/msa_admin_ui
+      dockerfile: Dockerfile
+    volumes:
+      - ./apps/msa_admin_ui/:/app
+      - /app/node_modules
+    ports:
+      - '8005:5000'
+    networks:
+      - dev.a-i.kz
+
+  adp_front:
+    build:
+      context: ./fronts/adp_front
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    container_name: adp_front
+    volumes:
+      - ./fronts/adp_front:/app/adp_front
+      - /app/adp_front/node_modules
+
+  ones:
+    build:
+      context: apps/ones
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: ones
+      SERVICE_TAGS: dev
+    working_dir: /var/www/ones
+    volumes:
+      - ./apps/ones/:/var/www/ones
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  esbd:
+    build:
+      context: apps/esbd
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: esbd
+      SERVICE_TAGS: dev
+    working_dir: /var/www/esbd
+    volumes:
+      - ./apps/esbd/:/var/www/esbd
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  kaspi:
+    build:
+      context: apps/kaspi
+      dockerfile: Dockerfile
+    image: digitalocean.com/php
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: kaspi
+      SERVICE_TAGS: dev
+    working_dir: /var/www/kaspi
+    volumes:
+      - ./apps/kaspi/:/var/www/kaspi
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  kaspi_db:
+    image: mysql:8.0
+    container_name: kaspi_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33068:3306"
+    environment:
+      MYSQL_DATABASE: kaspi
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - ./apps/kaspi/storage/dbdata:/var/lib/mysql
+      - /home/mysql/mysql-files:/var/lib/mysql-files/
+    networks:
+      - dev.a-i.kz
+
+
+  kasko:
+    build:
+      context: apps/kasko
+      dockerfile: Dockerfile
+    image: digitalocean.com/php
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: kasko
+      SERVICE_TAGS: dev
+    working_dir: /var/www/kasko
+    volumes:
+      - ./apps/kasko/:/var/www/kasko
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  kasko_db:
+    image: mysql:8.0
+    container_name: kasko_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33069:3306"
+    environment:
+      MYSQL_DATABASE: kasko
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - ./apps/kasko/storage/dbdata:/var/lib/mysql
+      - /home/mysql/mysql-files:/var/lib/mysql-files/
+    networks:
+      - dev.a-i.kz
+
+  client:
+    build:
+      context: apps/client
+      dockerfile: Dockerfile
+    image: digitalocean.com/php
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: client
+      SERVICE_TAGS: dev
+    working_dir: /var/www/client
+    volumes:
+      - ./apps/client/:/var/www/client
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  client_db:
+    image: mysql:8.0
+    container_name: client_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33070:3306"
+    environment:
+      MYSQL_DATABASE: client
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - ./apps/client/storage/dbdata:/var/lib/mysql
+      - /home/mysql/mysql-files:/var/lib/mysql-files/
+    networks:
+      - dev.a-i.kz
+
+  ogpo:
+    build:
+      context: apps/ogpo
+      dockerfile: Dockerfile
+    image: digitalocean.com/php
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: ogpo
+      SERVICE_TAGS: dev
+    working_dir: /var/www/ogpo
+    volumes:
+      - ./apps/ogpo/:/var/www/ogpo
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  ogpo_db:
+    image: mysql:8.0
+    container_name: ogpo_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33071:3306"
+    environment:
+      MYSQL_DATABASE: ogpo
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - ./apps/ogpo/storage/dbdata:/var/lib/mysql
+      - /home/mysql/mysql-files:/var/lib/mysql-files/
+    networks:
+      - dev.a-i.kz
+
+  shanyrak:
+    build:
+      context: apps/shanyrak
+      dockerfile: Dockerfile
+    image: digitalocean.com/php
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: shanyrak
+      SERVICE_TAGS: dev
+    working_dir: /var/www/shanyrak
+    volumes:
+      - ./apps/shanyrak/:/var/www/shanyrak
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - dev.a-i.kz
+
+  shanyrak_db:
+    image: mysql:8.0
+    container_name: shanyrak_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33083:3306"
+    environment:
+      MYSQL_DATABASE: shanyrak
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - ./apps/shanyrak/storage/dbdata:/var/lib/mysql
+      - /home/mysql/mysql-files:/var/lib/mysql-files/
+    #      - .docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - dev.a-i.kz
+
+  mst:
+      build:
+        context: apps/mst
+        dockerfile: Dockerfile
+      image: digitalocean.com/php
+      restart: unless-stopped
+      tty: true
+      environment:
+        SERVICE_NAME: mst
+        SERVICE_TAGS: dev
+      working_dir: /var/www/mst
+      volumes:
+        - ./apps/mst/:/var/www/mst
+        - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+      networks:
+        - dev.a-i.kz
+
+  mst_db:
+      image: mysql:8.0
+      container_name: mst_db
+      restart: unless-stopped
+      tty: true
+      ports:
+        - "33072:3306"
+      environment:
+        MYSQL_DATABASE: mst
+        MYSQL_ROOT_PASSWORD: root
+        SERVICE_NAME: mysql
+        SERVICE_TAGS: dev
+      volumes:
+        - ./apps/mst/storage/dbdata:/var/lib/mysql
+        - /home/mysql/mysql-files:/var/lib/mysql-files/
+      #      - .docker/mysql/my.cnf:/etc/mysql/my.cnf
+      networks:
+        - dev.a-i.kz
+
+
+networks:
+  dev.a-i.kz:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.18.0.1/24"
+
+volumes:
+  dbdata:
+    driver: local

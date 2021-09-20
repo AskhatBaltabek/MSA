@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+    stages {
+        stage("Unit Tests") {
+            when {
+                not {
+                    branch 'prod'
+                }
+            }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        echo 'Здесь будут крутиться unit тесты'
+                        }
+                    }
+                        post {
+                            always {
+                                jiraSendBuildInfo site: 'it-amanat.atlassian.net'
+                            }
+                        }
+                    }
+        stage("API Tests") {
+            when {
+                not {
+                    branch 'prod'
+                }
+            }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        echo 'Здесь будут крутиться API тесты'
+                        }
+                    }
+                        post {
+                            always {
+                                jiraSendBuildInfo site: 'it-amanat.atlassian.net'
+                            }
+                        }
+                    }
+        stage('Deploy to Production') {
+            when {
+                branch 'prod'
+            }
+            steps {
+                echo 'Deploying to Production from dev...'
+            }
+            post {
+                always {
+                    jiraSendDeploymentInfo site: 'it-amanat.atlassian.net', environmentId: 'dictionary_api', environmentName: 'Dictionary-API', environmentType: 'production'
+                }
+            }
+         }
+    }
+}

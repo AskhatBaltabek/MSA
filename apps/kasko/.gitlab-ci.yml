@@ -1,0 +1,12 @@
+stages:
+  - build
+  - deploy
+include:
+  - project: 'amanatpolicy/devops/kubectl'
+    file: 'build-dev.yml'
+  - project: 'amanatpolicy/devops/kubectl'
+    file: 'build-staging.yml'
+  - project: 'amanatpolicy/devops/kubectl'
+    file: 'deploy-dev.yml'
+  - project: 'amanatpolicy/devops/kubectl'
+    file: 'deploy-staging.yml'

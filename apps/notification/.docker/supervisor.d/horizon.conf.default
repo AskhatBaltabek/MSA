@@ -1,0 +1,9 @@
+[program:horizon]
+process_name=%(program_name)s
+command=php /var/www/notification/artisan horizon
+user=www-data
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/www/notification/horizon.log
+stopwaitsecs=3600

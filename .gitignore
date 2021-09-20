@@ -1,0 +1,4 @@
+.idea
+/fronts/*/node_modules/
+/apps/*/vendor
+/apps/*/storage/*

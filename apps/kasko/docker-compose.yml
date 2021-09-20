@@ -1,0 +1,57 @@
+version: '3'
+services:
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8009:8009"
+    volumes:
+      - ./:/var/www/kasko
+      - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - .docker/nginx/sites/:/etc/nginx/conf.d/
+    networks:
+      - msa-network
+
+
+  #PHP Service
+  kasko:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: kasko
+      SERVICE_TAGS: dev
+    working_dir: /var/www/kasko
+    volumes:
+      - ./:/var/www/kasko
+      - .docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - msa-network
+
+
+  #MySQL Service
+  kasko_db:
+    image: mysql:8.0
+    container_name: kasko_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33069:3306"
+    environment:
+      MYSQL_DATABASE: kasko
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - .docker/data/dbdata:/var/lib/mysql
+    #      - .docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - msa-network
+
+networks:
+  msa-network:
+    driver: bridge

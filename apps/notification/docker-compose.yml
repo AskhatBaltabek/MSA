@@ -1,0 +1,57 @@
+version: '3'
+services:
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./:/var/www/notification
+      - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - .docker/nginx/sites/:/etc/nginx/conf.d/
+    networks:
+      - msa-network
+
+
+  #PHP Service
+  notification:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: notification
+      SERVICE_TAGS: dev
+    working_dir: /var/www/notification
+    volumes:
+      - ./:/var/www/notification
+      - .docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - msa-network
+
+
+  #MySQL Service
+  notification_db:
+    image: mysql:8.0
+    container_name: notification_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33063:3306"
+    environment:
+      MYSQL_DATABASE: notification
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - .docker/data/dbdata:/var/lib/mysql
+#      - .docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - msa-network
+
+networks:
+  msa-network:
+    driver: bridge

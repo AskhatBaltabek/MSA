@@ -1,0 +1,49 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {service-name}
+  namespace: {namespace}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {service-name}
+  template:
+    metadata:
+      labels:
+        app: {service-name}
+    spec:
+      volumes:
+      - name: {service-name}-{namespace}
+        emptyDir: {}
+      terminationGracePeriodSeconds: 60
+      imagePullSecrets:
+        - name: gitlab
+      containers:
+        - name: {service-name}
+          image: {api-image}
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 9000
+          envFrom:
+            - configMapRef:
+                name: {service-name}
+          volumeMounts:
+            - name: {service-name}-{namespace}
+              mountPath: /mnt/{service-name}-{namespace}
+        - name: nginx-{service-name}
+          image: {nginx-image}
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 80
+          volumeMounts:
+          - name: {service-name}-{namespace}
+            mountPath: /mnt/{service-name}-{namespace}
+      initContainers:
+        - name: {service-name}-{namespace}-init
+          image: {api-image}
+          command: ['sh', '-c', "cp -rp /var/www/{service-name}/* /mnt/{service-name}-{namespace}"]
+          volumeMounts:
+            - name: {service-name}-{namespace}
+              mountPath: /mnt/{service-name}-{namespace}

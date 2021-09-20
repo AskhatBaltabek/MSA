@@ -1,0 +1,38 @@
+stages:
+  - build
+  - deploy
+include:
+  # - project: 'amanatpolicy/devops/kubectl'
+  #   file: 'build-dev.yml'
+  # - project: 'amanatpolicy/devops/kubectl'
+  #   file: 'build-staging.yml'
+  - project: 'amanatpolicy/devops/kubectl'
+    file: 'deploy-dev.yml'
+  - project: 'amanatpolicy/devops/kubectl'
+    file: 'deploy-staging.yml'
+build docker containers dev:
+  image: docker:stable
+  stage: build
+  only:
+    - dev
+  variables:
+    DOCKER_HOST: tcp://docker:2375/
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+
+  services:
+    - docker:dind
+  tags:
+    - k8s
+  before_script:
+    - docker login --username $USER --password $PASS registry.gitlab.com
+    - echo "${PRIVATE_KEY}" | tr -d '\r' > ./storage/jwt/private.pem
+    - echo "${PUBLIC_KEY}" | tr -d '\r' > ./storage/jwt/public.pem
+    - echo "${ESBD_CERT}" | tr -d '\r' > ./storage/certs/esbd_cert.pem
+
+  script:
+    - docker build -f Dockerfile -t $DOCKER_ENV_CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME:$CI_COMMIT_SHORT_SHA .
+    - docker push $DOCKER_ENV_CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME
+    - sed -i "s,{service-name},${SERVICE_NAME},g;s,{namespace},${NAMESPACE_STAGING},g" default.conf
+    - docker build -f Dockerfile-nginx -t $DOCKER_ENV_CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME/nginx:$CI_COMMIT_SHORT_SHA .
+    - docker push $DOCKER_ENV_CI_REGISTRY_IMAGE/$CI_COMMIT_REF_NAME/nginx

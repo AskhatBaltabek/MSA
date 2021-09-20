@@ -1,0 +1,57 @@
+version: '3'
+services:
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8004:8004"
+    volumes:
+      - ./:/var/www/dictionary
+      - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - .docker/nginx/sites/:/etc/nginx/conf.d/
+    networks:
+      - msa-network
+
+
+  #PHP Service
+  dictionary:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: dictionary
+      SERVICE_TAGS: dev
+    working_dir: /var/www/dictionary
+    volumes:
+      - ./:/var/www/dictionary
+      - .docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - msa-network
+
+
+  #MySQL Service
+  dictionary_db:
+    image: mysql:8.0
+    container_name: dictionary_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33064:3306"
+    environment:
+      MYSQL_DATABASE: dictionary
+      MYSQL_ROOT_PASSWORD: root
+      SERVICE_NAME: mysql
+      SERVICE_TAGS: dev
+    volumes:
+      - .docker/data/dbdata:/var/lib/mysql
+    #      - .docker/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - msa-network
+
+networks:
+  msa-network:
+    driver: bridge

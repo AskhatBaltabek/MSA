@@ -1,0 +1,57 @@
+version: '3'
+services:
+
+  #Nginx Services
+  webserver:
+    image: nginx:alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8007:8007"
+    volumes:
+      - ./:/var/www/esbd
+      - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - .docker/nginx/sites/:/etc/nginx/conf.d/
+    networks:
+      - msa-network
+
+
+  #PHP Services
+  esbd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      SERVICE_NAME: esbd
+      SERVICE_TAGS: dev
+    working_dir: /var/www/esbd
+    volumes:
+      - ./:/var/www/esbd
+      - .docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - msa-network
+
+
+  #MySQL Services
+#  esbd_db:
+#    image: mysql:8.0
+#    container_name: esbd_db
+#    restart: unless-stopped
+#    tty: true
+#    ports:
+#      - "33067:3306"
+#    environment:
+#      MYSQL_DATABASE: esbd
+#      MYSQL_ROOT_PASSWORD: root
+#      SERVICE_NAME: mysql
+#      SERVICE_TAGS: dev
+#    volumes:
+#      - .docker/data/dbdata:/var/lib/mysql
+#    #      - .docker/mysql/my.cnf:/etc/mysql/my.cnf
+#    networks:
+#      - msa-network
+
+networks:
+  msa-network:
+    driver: bridge
